@@ -1,19 +1,21 @@
+from tkinter.tix import ROW
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_mysqldb import MySQL
-import MySQLdb.cursors
+from flask_sqlalchemy import SQLAlchemy
+# from marshmallow_sqlalchemy import ModelSchema
 import re
 
 app = Flask(__name__)
-
 app.secret_key = 'your secret key'
-
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'your password'
+app.config['MYSQL_PASSWORD'] = 'harshith.4123'
 app.config['MYSQL_DB'] = 'geeklogin'
 
 mysql = MySQL(app)
 
+
+db = SQLAlchemy(app)
 @app.route('/home')
 def home():
     return render_template('Home.HTML')
@@ -23,7 +25,6 @@ def about():
     return render_template('About.HTML')
 
 
-
 @app.route('/')
 @app.route('/login', methods =['GET', 'POST'])
 def login():
@@ -31,15 +32,16 @@ def login():
 	if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
 		username = request.form['username']
 		password = request.form['password']
-		cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+		cursor = mysql.connection.cursor()
 		cursor.execute('SELECT * FROM accounts WHERE username = % s AND password = % s', (username, password, ))
 		account = cursor.fetchone()
 		if account:
-			session['loggedin'] = True
-			session['id'] = account['id']
-			session['username'] = account['username']
+			for row in cursor:
+				session['loggedin'] = True
+				session['id'] = row[0]
+				session['username'] = row[1]
 			msg = 'Logged in successfully !'
-			return render_template('index.html', msg = msg)
+			return render_template('home.html', msg = msg)
 		else:
 			msg = 'Incorrect username / password !'
 	return render_template('login.html', msg = msg)
@@ -58,7 +60,7 @@ def register():
 		username = request.form['username']
 		password = request.form['password']
 		email = request.form['email']
-		cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+		cursor = mysql.connection.cursor()
 		cursor.execute('SELECT * FROM accounts WHERE username = % s', (username, ))
 		account = cursor.fetchone()
 		if account:
@@ -75,10 +77,20 @@ def register():
 			msg = 'You have successfully registered !'
 	elif request.method == 'POST':
 		msg = 'Please fill out the form !'
-	return render_template('register.html', msg = msg)
+	if msg == 'You have successfully registered !':
+		return render_template('Home.HTML')
+	else:
+		return render_template('register.html')
+	
 
+# Creating Model 
 
-
+class User(db.Model):
+	__tablename__="users"
+	id = db.Column(db.Integer,primary_key=True)
+	username = db.Column(db.String(20))
+	email = db.Column(db.String(20))
+	
 
 if __name__=='__main__':
     app.run(debug=True)

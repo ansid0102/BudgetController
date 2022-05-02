@@ -2,7 +2,7 @@ from tkinter.tix import ROW
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_mysqldb import MySQL
 from flask_sqlalchemy import SQLAlchemy
-# from marshmallow_sqlalchemy import ModelSchema
+
 import re
 
 app = Flask(__name__)
